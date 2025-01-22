@@ -68,6 +68,53 @@ function _worktree() {
 
 compdef _worktree worktree
 
+function worktree-from-branch() {
+    local branch_name="${1}"
+    local source_branch="${2}"
+    local repo_root="$(__determine_git_repo_root)"
+    local new_dir="${repo_root}/../${branch_name}"
+
+    # Ensure local git repo is up to date
+    git fetch --all
+    # Create the worktree
+    # If the branch already exists, just use it and check it out
+    if  git rev-parse --verify "${branch_name}" &> /dev/null; then
+        git worktree add "${new_dir}" "${branch_name}"
+        /opt/homebrew/bin/git -C "${new_dir}" checkout "${branch_name}"
+    else
+        # Otherwise, create a new branch with the correct name and set up remote tracking
+        local worktree_command=(git worktree add -b "${branch_name}" "${new_dir}")
+        
+        # If the branch exists on remote, track that...
+        local remote_branch_name="origin/${branch_name}"
+        if  git rev-parse --verify "${remote_branch_name}" &> /dev/null; then
+            worktree_command+=("--track" "${remote_branch_name}")
+        else
+            # But if not, just use origin/source_branch as the source (without tracking)
+            worktree_command+=("--no-track" "origin/${source_branch}")
+        fi
+        
+        # git worktree add --track -b "${branch_name}" "${new_dir}" "${remote_tracking_branch}"
+        # (set -x; "${worktree_command[@]}")
+        "${worktree_command[@]}"
+    fi
+    # Move into the worktree directory
+    cd "${new_dir}"
+}
+
+function _worktree-from-branch() {
+    local branches options
+    # Get all remote branches, outputting their name only (without "origin/" prefix)
+    branches="$(git branch -r --format="%(refname:lstrip=-1)")"
+
+    # Convert the newline separated string into an array (use ${(@f)VAR} to split at new lines)
+    set -A options "${(@f)branches}"
+    
+    compadd -M 'l:|=* r:|=*' ${options}
+}
+
+compdef _worktree-from-branch worktree-from-branch
+
 function rm-worktree() {
     # Check if a worktree was provided
     local worktree_name="${1}"
