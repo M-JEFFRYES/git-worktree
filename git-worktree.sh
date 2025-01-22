@@ -90,8 +90,8 @@ function worktree-from-branch() {
         if  git rev-parse --verify "${remote_branch_name}" &> /dev/null; then
             worktree_command+=("--track" "${remote_branch_name}")
         else
-            # But if not, just use origin/main as the source (without tracking)
-            worktree_command+=("--no-track" "origin/main")
+            # But if not, just use origin/source_branch as the source (without tracking)
+            worktree_command+=("--no-track" "origin/${source_branch}")
         fi
         
         # git worktree add --track -b "${branch_name}" "${new_dir}" "${remote_tracking_branch}"
