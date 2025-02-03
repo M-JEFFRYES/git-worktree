@@ -74,6 +74,11 @@ function worktree-from-branch() {
     local repo_root="$(__determine_git_repo_root)"
     local new_dir="${repo_root}/../${branch_name}"
 
+    # Ensure the source branch is up to date
+    cd "${source_branch}"
+    git pull
+    cd "${repo_root}"
+
     # Ensure local git repo is up to date
     git fetch --all
     # Create the worktree
